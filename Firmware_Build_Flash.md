@@ -48,6 +48,37 @@ python -m esptool --chip esp32s3 -p COM5 write_flash 0x0 amyboard-full-AMYBOARD.
 
 Unplug and replug the board (or press reset) after flashing.
 
+#### On macOS
+macOS has no Device Manager or COM ports; the board shows up as a `/dev/cu.usbmodem*` device. Install `esptool` (in a venv, or use `python3` instead of `python`):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install esptool
+```
+
+Put the board in download mode: hold both side buttons, release RST first, then release BOOT (or hold BOOT while plugging in USB). Then find its port:
+
+```bash
+ls /dev/cu.usbmodem*
+```
+
+You should see something like `/dev/cu.usbmodem21201`. If zsh says `no matches found`, the board isn't connected or the cable is charge-only. To confirm it's in download mode, run `ioreg -p IOUSB -l -w0 | rg -i '"USB Product Name"'` and look for `USB JTAG_serial debug unit` (Espressif, vendor ID `0x303A`).
+
+**Keep your sketches and files:**
+
+```bash
+python -m esptool --chip esp32s3 -p /dev/cu.usbmodem21201 erase_region 0xd000 0x2000
+python -m esptool --chip esp32s3 -p /dev/cu.usbmodem21201 write_flash 0x10000 amyboard-firmware-AMYBOARD.bin
+```
+
+**Clean full install** (erases your sketches and files):
+
+```bash
+python -m esptool --chip esp32s3 -p /dev/cu.usbmodem21201 write_flash 0x0 amyboard-full-AMYBOARD.bin
+```
+
+Replace `/dev/cu.usbmodem21201` with the port you found, and run from the folder containing the `.bin` (or give its full path). Press RST after flashing. The port name can change once the new firmware boots, so run `ls /dev/cu.usbmodem*` again before connecting with `mpremote`.
+
 ### 4. Listen
 Load a Juno patch with chorus II, hold a low six-note chord at full velocity, and check that it rounds off instead of crackling. A quiet single note should be exactly as loud as before.
 
